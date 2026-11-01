@@ -1,51 +1,51 @@
 {
-  "name": "optirust-skills",
+  "name": "rajutara-skills",
   "version": "1.0.0",
-  "repository": "https://github.com/optirust/optirust-skills",
+  "repository": "https://github.com/rajutara/rajutara-skills",
   "license": "MIT OR Apache-2.0",
-  "targets": { "optirust": "1.0.0" },
+  "targets": { "rajutara": "1.0.0" },
   "skills": [
     {
-      "name": "optirust-dev",
-      "path": "skills/optirust-dev/SKILL.md",
+      "name": "rajutara-dev",
+      "path": "skills/rajutara-dev/SKILL.md",
       "audience": "developer",
-      "description": "Build, test and extend the optirust workspace: gates, crate map, adding a tool, command, pane, file field or translated string."
+      "description": "Build, test and extend the rajutara workspace: gates, crate map, adding a tool, command, pane, file field or translated string."
     },
     {
-      "name": "optirust-core-model",
-      "path": "skills/optirust-core-model/SKILL.md",
+      "name": "rajutara-core-model",
+      "path": "skills/rajutara-core-model/SKILL.md",
       "audience": "developer",
       "description": "The domain model and its invariants with exact type names: Style, Piece, Contour, SizeTable, GradeRule, Marker, Order, CutPlan, ids, units, validation."
     },
     {
-      "name": "optirust-io",
-      "path": "skills/optirust-io/SKILL.md",
+      "name": "rajutara-io",
+      "path": "skills/rajutara-io/SKILL.md",
       "audience": "developer",
       "description": "Import and export recipes for ASTM/AAMA DXF, RUL, HPGL/2, PDF, CSV and native files, with ImportIssue handling and fixtures."
     },
     {
-      "name": "optirust-nesting",
-      "path": "skills/optirust-nesting/SKILL.md",
+      "name": "rajutara-nesting",
+      "path": "skills/rajutara-nesting/SKILL.md",
       "audience": "developer",
       "description": "Use and tune the nesting engine: Stop modes, seeds, determinism, reading reports, the 300-piece gate and ESICUP benchmarks."
     },
     {
-      "name": "optirust-headless",
-      "path": "skills/optirust-headless/SKILL.md",
+      "name": "rajutara-headless",
+      "path": "skills/rajutara-headless/SKILL.md",
       "audience": "developer, ci",
-      "description": "Drive optirust without a screen: --smoke under Xvfb, the tshirt_sample example, the end-to-end test, scripting the crates and the zip+JSON documents."
+      "description": "Drive rajutara without a screen: --smoke under Xvfb, the tshirt_sample example, the end-to-end test, scripting the crates and the zip+JSON documents."
     },
     {
-      "name": "optirust-operator",
-      "path": "skills/optirust-operator/SKILL.md",
+      "name": "rajutara-operator",
+      "path": "skills/rajutara-operator/SKILL.md",
       "audience": "operator-assistant",
       "description": "Assist a workshop Operator in Optitex vocabulary: PDS, Grading, Marker and Cut Plan workflows, shortcuts, importing a graded ASTM file, making a marker, planning a cut order."
     },
     {
-      "name": "optirust-clean-room",
-      "path": "skills/optirust-clean-room/SKILL.md",
+      "name": "rajutara-clean-room",
+      "path": "skills/rajutara-clean-room/SKILL.md",
       "audience": "developer",
-      "description": "The ADR 0001, 0002 and 0013 rules to obey when extending optirust: no Optitex files, no GPL code, RUL is an open format."
+      "description": "The ADR 0001, 0002 and 0013 rules to obey when extending rajutara: no Optitex files, no GPL code, RUL is an open format."
     }
   ]
 }

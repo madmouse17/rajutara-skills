@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Verifies the skill set.
 #
-#   scripts/verify.sh [/path/to/optirust]
+#   scripts/verify.sh [/path/to/rajutara]
 #
 # 1. Layout: every skills/<name>/SKILL.md has frontmatter `name` equal to its directory, a
 #    `description`, at most 300 lines, and an entry in skills/index.json (and the reverse).
-# 2. With an optirust checkout: every repository path cited in backticks exists there. A cited
-#    path starts with a top-level directory or root file of optirust; tokens with placeholders
+# 2. With an rajutara checkout: every repository path cited in backticks exists there. A cited
+#    path starts with a top-level directory or root file of rajutara; tokens with placeholders
 #    (<name>, *, .., {}) are skipped.
 set -euo pipefail
 
@@ -30,7 +30,7 @@ done
 
 root="${1:-}"
 if [ -n "$root" ]; then
-  [ -f "$root/AGENTS.md" ] || { echo "not an optirust checkout: $root" >&2; exit 2; }
+  [ -f "$root/AGENTS.md" ] || { echo "not an rajutara checkout: $root" >&2; exit 2; }
   dirs='crates|docs|scripts|fixtures|samples|assets|docker|packaging|\.omp'
   files='AGENTS\.md|GLOSSARY\.md|CHANGELOG\.md|ROADMAP\.md|ATTRIBUTION\.md|CONTRIBUTING\.md|README\.md|SECURITY\.md|deny\.toml|about\.toml|rust-toolchain\.toml|Cargo\.toml|Cargo\.lock|THIRD-PARTY\.html'
   checked=0
@@ -39,7 +39,7 @@ if [ -n "$root" ]; then
     path="${path%%:*}"
     case "$path" in *'<'*|*'*'*|*..*|*'{'*) continue ;; esac
     checked=$((checked + 1))
-    [ -e "$root/$path" ] || fail "cited path missing in optirust: $path"
+    [ -e "$root/$path" ] || fail "cited path missing in rajutara: $path"
   done < <(grep -ohE "\`(($dirs)/[^\`[:space:]]*|($files))\`" "$here"/skills/*/SKILL.md | sort -u)
   echo "checked $checked cited paths"
 fi
