@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="Licence: MIT or Apache-2.0" src="https://img.shields.io/badge/licence-MIT%20OR%20Apache--2.0-d85820">
   <img alt="7 skills" src="https://img.shields.io/badge/skills-7-111c2e">
-  <img alt="For rajutara 1.0.0" src="https://img.shields.io/badge/rajutara-1.0.0-d85820">
+  <img alt="For rajutara 1.5.0" src="https://img.shields.io/badge/rajutara-1.5.0-d85820">
 </p>
 
 Seven skills that teach a coding agent (Claude Code, Codex, Cursor, omp and any other agent that reads `SKILL.md` files) how to build, extend, script and operate rajutara, and what it must never do. Each skill is one `skills/<name>/SKILL.md` with `name` and `description` frontmatter, at most 300 lines, written from the rajutara sources: every path and command it cites exists in the rajutara checkout (`scripts/verify.sh` checks that).
@@ -43,15 +43,15 @@ The skills describe the rajutara repository, so open the agent in a checkout of 
 
 | Skill | Use it when | Source in rajutara |
 |---|---|---|
-| [`rajutara-dev`](skills/rajutara-dev/SKILL.md) | You change code: build and gates, crate map, adding a tool, command, pane, model field or translated string, conventions. | `AGENTS.md`, `CONTRIBUTING.md`, `docs/spec/00-overview.md` §4 and §5 |
-| [`rajutara-core-model`](skills/rajutara-core-model/SKILL.md) | You read or build documents: `Style`, `Piece`, `Contour`, `SizeTable`, `GradeRule`, `Marker`, `Order`, `CutPlan`, ids, units, validation. | `docs/spec/01-core-model.md`, `crates/rajutara-core` |
-| [`rajutara-io`](skills/rajutara-io/SKILL.md) | You import or export DXF, RUL, HPGL/2, PDF, CSV or native files; `ImportIssue` handling; fixtures. | `docs/spec/02-pds.md` §7 to §9, `crates/rajutara-io` |
+| [`rajutara-dev`](skills/rajutara-dev/SKILL.md) | You change code: build and gates, the one-binary test layout, crate map, adding a tool, command, pane, model field or translated string, the Optitex-names rule, conventions. | `AGENTS.md`, `CONTRIBUTING.md`, `docs/spec/00-overview.md` §4 and §5 |
+| [`rajutara-core-model`](skills/rajutara-core-model/SKILL.md) | You read or build documents: `Style`, `Piece`, `Contour`, `SizeTable`, `GradeRule`, `Marker` (clusters, cut order, flaws), `Order`, `CutPlan`, ids, units, validation. | `docs/spec/01-core-model.md`, `crates/rajutara-core` |
+| [`rajutara-io`](skills/rajutara-io/SKILL.md) | You import or export DXF, RUL, HPGL/2, PDF, CSV, Excel `.xlsx` or native `.rjx`/`.rjm`/`.rjc` files; `ImportIssue` handling; fixtures. | `docs/spec/02-pds.md` §7 to §9, `crates/rajutara-io` |
 | [`rajutara-nesting`](skills/rajutara-nesting/SKILL.md) | You nest a Marker from code, tune it, read its report, or change the engine; `Stop` modes, seeds, the 300-piece gate. | `docs/spec/04-marker.md` §6, `crates/rajutara-nest` |
 | [`rajutara-headless`](skills/rajutara-headless/SKILL.md) | You verify a build or automate a job without a screen: `--smoke`, `tshirt_sample`, the end-to-end test, scripting. | `docs/spec/07-ui-shell.md` §1, `crates/rajutara/examples` |
-| [`rajutara-operator`](skills/rajutara-operator/SKILL.md) | An assistant helps a workshop Operator: PDS, Grading, Marker and Cut Plan workflows in Optitex vocabulary, shortcuts, importing a graded ASTM file, making a marker, planning a cut order. | `GLOSSARY.md`, `docs/spec/02-pds.md` to `05-cutplan.md` |
+| [`rajutara-operator`](skills/rajutara-operator/SKILL.md) | An assistant helps a workshop Operator: PDS, Grading, Marker and Cut Plan workflows under their Optitex names and keys, importing a graded ASTM file, making a marker, clusters and cutting order, planning a cut order. | `GLOSSARY.md`, `docs/spec/02-pds.md` to `05-cutplan.md` |
 | [`rajutara-clean-room`](skills/rajutara-clean-room/SKILL.md) | Before you add a feature, format, asset, fixture or dependency: ADR 0001 (no Optitex files), ADR 0002 (MIT OR Apache-2.0, no GPL), ADR 0013 (RUL is open). | `docs/adr/0001`, `0002`, `0013` |
 
-[`skills/index.json`](skills/index.json) lists them for tools that prefer a manifest.
+[`skills/index.json`](skills/index.json) lists them for tools that prefer a manifest. Its `version` follows the rajutara release the skills were checked against (now 1.5.0); what changed is in [`CHANGELOG.md`](CHANGELOG.md).
 
 Start a developer session with `rajutara-clean-room` and `rajutara-dev`; they point to the others. Give an Operator-facing assistant only `rajutara-operator`.
 

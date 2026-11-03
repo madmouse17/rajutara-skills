@@ -1,6 +1,6 @@
 ---
 name: rajutara-io
-description: "Import and export recipes for rajutara files - ASTM D6673 / AAMA-292 DXF, ASTM RUL grade rules, HPGL/2, PDF plots and reports, CSV, and the native .optx/.optm/.optc containers - with ImportIssue handling and test fixtures. Use when reading or writing any file format in rajutara-io, or scripting conversions."
+description: "Import and export recipes for rajutara files - ASTM D6673 / AAMA-292 DXF, ASTM RUL grade rules, HPGL/2, PDF plots and reports, CSV, Excel .xlsx workbooks, and the native .rjx/.rjm/.rjc containers - with ImportIssue handling and test fixtures. Use when reading or writing any file format in rajutara-io, or scripting conversions."
 ---
 
 # rajutara-io
@@ -9,12 +9,13 @@ Crate `rajutara-io` (`crates/rajutara-io/src/lib.rs`) owns every file format; it
 
 | Format | Direction | Entry points (`rajutara_io::`) |
 |---|---|---|
-| `.optx` Style, `.optm` Marker, `.optc` Cut Plan (zip with `manifest.json` + `document.json`, format 2) | open, save | `load_style`, `save_style`, `load_marker`, `save_marker`, `load_cut_plan`, `save_cut_plan`, `embed_style`, `style_crc32` |
+| `.rjx` Style, `.rjm` Marker, `.rjc` Cut Plan (zip with `manifest.json` + `document.json`, format 2) | open, save | `load_style`, `save_style`, `load_marker`, `save_marker`, `load_cut_plan`, `save_cut_plan`, `embed_style`, `style_crc32` |
 | ASTM D6673 / AAMA-292 DXF | import, export | `import_dxf`, `import_dxf_cancellable`, `parse_dxf`, `export_dxf`, `render_dxf` |
 | ASTM RUL | import, export | `read_rul`, `write_rul`, `write_rul_atomic` (import happens automatically beside a DXF) |
 | HPGL/2 | export | `render_hpgl`, `plot_hpgl` with `PlotJob` + `PlotterSetup` |
 | PDF (A4 tiled, A0, A4 fit) | export | `render_pdf`, `plot_pdf` with `PlotJob` + `PdfPage`; reports: `render_report_pdf`, `write_report_pdf` with `ReportDoc` |
 | CSV | import, export | `read_csv_rows`, `write_csv` |
+| Excel `.xlsx` (SpreadsheetML, 1.5.0) | export | `write_xlsx(rows, sheet, path)`; several sheets: `rajutara_io::xlsx::{Sheet, write_workbook, render_workbook}` |
 
 All writers go through `write_atomic(path, bytes, keep_backup)` (`crates/rajutara-io/src/fsutil.rs`): temp file then rename, a crash leaves the old file. `save_*` keeps the previous file as `<file>.bak`.
 
@@ -42,6 +43,7 @@ let (style, issues) = import_dxf(path, &opts)?;      // reads the sibling .rul b
 - The grade rules come from the `.rul` named by `Grade Rule Table:` in the DXF, same folder, case-insensitive; the name must be a plain file name (no `/`, `\`, `..`). A missing RUL gives a Style with no Grade Rules and an issue.
 - Limits: a file over 64 MiB (`MAX_DXF_BYTES` in `crates/rajutara-io/src/dxf/scan.rs`) or binary DXF is refused with `IoError::Dxf`; no piece found is also `IoError::Dxf`.
 - Background job: `import_dxf_cancellable(path, &opts, &|| cancelled.load(..))` returns `IoError::Cancelled`.
+- Import wizard form (1.2.0): `import_dxf_with_rul_cancellable(path, rul, &opts, &cancelled) -> (Style, issues, DxfFileInfo { unit_mm, flavor, layers, .. })` takes an explicit rule file (`None` keeps the `Grade Rule Table:` lookup) and reports what the file said about units, dialect and layers. `opts.line_mode`: `LineKind::Sew` (default, the boundary is the sewing line) or `Cut` (the boundary is the cutting line, layer 14 becomes an internal Sew line).
 - In-memory: `parse_dxf(bytes, Some(rul_text), &opts)`; the Style is named `Imported` when the file has no `Style Name:`.
 - After import, run `rajutara_core::validate_style(&style)` and read `docs/spec/02-pds.md` §7.4 for the algorithm.
 
@@ -79,13 +81,19 @@ The module (PDS or Marker) builds a `PlotJob { sheet: Rect, items: Vec<PlotItem 
 
 `write_csv(&rows, path)`: UTF-8, no BOM, LF, `.` decimal. Cells that start with `=`, `@`, tab, CR, or `+`/`-` not followed by a number get a leading `'` (formula injection from foreign piece names). `read_csv_rows(text)` strips one BOM, no header handling; callers (`rajutara_cutplan::order::import_order_csv`, `rajutara_cutplan::rolls::import_rolls_csv`) skip bad rows with an issue each.
 
+## Excel workbooks (1.5.0)
+
+`crates/rajutara-io/src/xlsx.rs` writes ECMA-376 SpreadsheetML with no styles, for File › Report to Excel. `write_xlsx(&rows, "Report", path)` writes one sheet; `write_workbook(&[Sheet { name, rows }, ..], path)` several, `render_workbook` returns the bytes. A cell that is a finite number with `.` as decimal mark becomes a number cell, except with a leading zero or more than 15 digits (codes and ids stay text). In a sheet name `[ ] : * ? / \` become `_`, it is cut to 31 characters, an empty name becomes `Sheet<n>`, and two names must differ without case. No sheet, a duplicate name, or more than 1 048 576 rows or 16 384 columns is `IoError::Refused`. Output is deterministic (fixed timestamps and part order) and written through `write_atomic`.
+
 ## Native documents
 
-`load_style(path) -> (Style, Vec<Issue>)` validates: any `Error` refuses the file (`IoError::Invalid`), warnings ride along. A file saved by a newer build is `IoError::NewerVersion`. Older versions migrate step by step (`crates/rajutara-io/src/native/migrate.rs`, `CURRENT_VERSION = 2`). Documents are zip files holding `manifest.json` (`{"format":"rajutara-style","version":2,"generator":"rajutara 1.0.0"}`) and `document.json`, so a script can read them with any zip and JSON library (`unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek.optx document.json`). `save_*` refuses a document it could not read back (NaN, over `MAX_DOCUMENT_BYTES` = 256 MiB). `embed_style(path, id)` loads a `.optx` for a Marker or Cut Plan with its CRC-32. Autosave: `autosave_path`, `newer_autosave` (`<stem>.autosave.<ext>`, no `.bak`).
+`load_style(path) -> (Style, Vec<Issue>)` validates: any `Error` refuses the file (`IoError::Invalid`), warnings ride along. A file saved by a newer build is `IoError::NewerVersion`. Older versions migrate step by step (`crates/rajutara-io/src/native/migrate.rs`, `CURRENT_VERSION = 2`). Documents are zip files holding `manifest.json` (`{"format":"rajutara-style","version":2,"generator":"rajutara 1.5.0"}`) and `document.json`, so a script can read them with any zip and JSON library (`unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek.rjx document.json`). `save_*` refuses a document it could not read back (NaN, over `MAX_DOCUMENT_BYTES` = 256 MiB). `embed_style(path, id)` loads a `.rjx` for a Marker or Cut Plan with its CRC-32. Autosave: `autosave_path`, `newer_autosave` (`<stem>.autosave.<ext>`, no `.bak`).
+
+The app still opens the pre-rename optirust files `.optx`, `.optm` and `.optc` (same container); they open untitled and Save writes `.rjx`, `.rjm` or `.rjc`. New fields of 1.5.0 (Marker clusters, cut order, flaws, bump lines, texts; Vertex names; Piece and Style fields) are optional and keep format 2: a 1.4.0 build opens such a file but drops them on re-save.
 
 ## Fixtures and tests
 
-- Original fixtures only (ADR-0001): `crates/rajutara-io/tests/fixtures/dxf/astm_minimum.dxf`, `crates/rajutara-io/tests/fixtures/dxf/graded3.rul`, `crates/rajutara-io/tests/fixtures/native/v1/`; large ones: `fixtures/style-100.optx`, `fixtures/marker-1000.optm` (regenerate with `cargo run -p rajutara-io --example budget_fixtures`).
+- Original fixtures only (ADR-0001): `crates/rajutara-io/tests/fixtures/dxf/astm_minimum.dxf`, `crates/rajutara-io/tests/fixtures/dxf/graded3.rul`, `crates/rajutara-io/tests/fixtures/native/v1/`; large ones: `fixtures/style-100.rjx`, `fixtures/marker-1000.rjm` (regenerate with `cargo run -p rajutara-io --example budget_fixtures`).
 - Build DXF text in tests with `crates/rajutara-io/tests/common/dxf_builder.rs` (`Dxf::new().block(name, body().rect_piece(..)).text()`), not by pasting vendor files.
-- Snapshot outputs with `insta` (`crates/rajutara-io/tests/snapshots/`); round-trip with `proptest` (`crates/rajutara-io/tests/dxf_roundtrip.rs`). Run `cargo test -p rajutara-io`.
+- Tests live in the crate's one integration binary: `crates/rajutara-io/tests/all/<name>.rs` plus a `mod <name>;` line in `crates/rajutara-io/tests/all/main.rs`. Snapshot outputs with `insta` (`crates/rajutara-io/tests/all/snapshots/`, files `all__<module>__<name>.snap`); round-trip with `proptest` (`crates/rajutara-io/tests/all/dxf_roundtrip.rs`). Run `cargo test -p rajutara-io`, or one module: `cargo test -p rajutara-io --test all xlsx`.
 - Never commit a DXF or RUL that came from a commercial CAD product's sample pack.

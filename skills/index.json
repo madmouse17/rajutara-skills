@@ -1,27 +1,27 @@
 {
   "name": "rajutara-skills",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "repository": "https://github.com/rajutara/rajutara-skills",
   "license": "MIT OR Apache-2.0",
-  "targets": { "rajutara": "1.0.0" },
+  "targets": { "rajutara": "1.5.0" },
   "skills": [
     {
       "name": "rajutara-dev",
       "path": "skills/rajutara-dev/SKILL.md",
       "audience": "developer",
-      "description": "Build, test and extend the rajutara workspace: gates, crate map, adding a tool, command, pane, file field or translated string."
+      "description": "Build, test and extend the rajutara workspace: gates, the one-binary test layout, crate map, adding a tool, command, pane, file field or translated string, the Optitex-names rule."
     },
     {
       "name": "rajutara-core-model",
       "path": "skills/rajutara-core-model/SKILL.md",
       "audience": "developer",
-      "description": "The domain model and its invariants with exact type names: Style, Piece, Contour, SizeTable, GradeRule, Marker, Order, CutPlan, ids, units, validation."
+      "description": "The domain model and its invariants with exact type names: Style, Piece, Contour, SizeTable, GradeRule, Marker (clusters, cut order, flaws, bump lines), Order, CutPlan, ids, units, validation."
     },
     {
       "name": "rajutara-io",
       "path": "skills/rajutara-io/SKILL.md",
       "audience": "developer",
-      "description": "Import and export recipes for ASTM/AAMA DXF, RUL, HPGL/2, PDF, CSV and native files, with ImportIssue handling and fixtures."
+      "description": "Import and export recipes for ASTM/AAMA DXF, RUL, HPGL/2, PDF, CSV, Excel .xlsx and the native .rjx/.rjm/.rjc files, with ImportIssue handling and fixtures."
     },
     {
       "name": "rajutara-nesting",
@@ -39,7 +39,7 @@
       "name": "rajutara-operator",
       "path": "skills/rajutara-operator/SKILL.md",
       "audience": "operator-assistant",
-      "description": "Assist a workshop Operator in Optitex vocabulary: PDS, Grading, Marker and Cut Plan workflows, shortcuts, importing a graded ASTM file, making a marker, planning a cut order."
+      "description": "Assist a workshop Operator in Optitex vocabulary: PDS, Grading, Marker and Cut Plan workflows, Optitex names and keys, importing a graded ASTM file, making a marker, planning a cut order."
     },
     {
       "name": "rajutara-clean-room",

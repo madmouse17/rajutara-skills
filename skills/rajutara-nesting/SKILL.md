@@ -63,7 +63,7 @@ let c = conflicts(&marker, &mut book);      // c.overlap_count(), c.outside, c.i
 
 - **Efficiency** = placed cutting-line area (after shrinkage, unbuffered) / (Material width x used length) x 100. **Used length** = largest X of any placed cutting line plus the right margin. **Per garment** = used length / complete bundles.
 - A good run has `unplaced == 0`, `overlap_count() == 0`, `in_margin` empty. Overlaps are allowed by hand placement (hatched red) but never come out of the engine: every result is verified by an exact `i_overlay` check (intersection area under 0.01 mm², `crates/rajutara-nest/src/engine/verify.rs`). A piece wider than the Material width stays unplaced; `validate_marker` flags it as `WiderThanMaterial`.
-- Reports: `report_data(&marker, &mut book, &ReportMeta{..}, &tr)` then `write_csv_report(&data, path)` or `report_doc` + `rajutara_io::write_report_pdf` (`crates/rajutara-nest/src/report.rs`). Sections: General, Order, Pieces, Notches.
+- Reports: `report_data(&marker, &mut book, &ReportMeta{..}, &tr)` then `write_xlsx_report(&data, path)` (Excel workbook, one sheet per section via `report::sheets`) or `report_doc` + `rajutara_io::write_report_pdf` (`crates/rajutara-nest/src/report.rs`). Sections: General, Order, Pieces, Notches.
 - Output: `marker_job` + `plot_marker(&job, &PlotTarget::Pdf(PdfPage::A0) | PlotTarget::Hpgl(setup), path)`; cut file: `rajutara_nest::output::cutfile::{cut_job, write_cutfile}` (generic HPGL/2; default pen 2 knife, pen 3 drill).
 
 ## Gates and benchmarks
@@ -71,18 +71,18 @@ let c = conflicts(&marker, &mut book);      // c.overlap_count(), c.outside, c.i
 - **300-piece gate** (D10): auto-nest 300 pieces in at most 60 s, 0 unplaced, 0 overlaps, efficiency above 70 % asserted (README reports 90.1 % in 58 s on the release benchmark). Release profile only:
 
 ```sh
-cargo test -p rajutara --release --test e2e_workflow phase_1b_300_piece_marker_nests_within_60_s_and_plots -- --include-ignored --nocapture
+cargo test -p rajutara --release --test all phase_1b_300_piece_marker_nests_within_60_s_and_plots -- --include-ignored --nocapture
 ```
 
-  In debug it is `#[ignore]`d because the engine is only fast enough optimised.
+  In debug it is `#[ignore]`d because the engine is only fast enough optimised. The test lives in the merged binary `crates/rajutara/tests/all/` (module `e2e_workflow`), hence `--test all`.
 - **ESICUP garment benchmarks** (not committed, no stated licence): `scripts/fetch-esicup.sh`, then
 
 ```sh
-RAJUTARA_ESICUP_DIR=target/esicup cargo test -p rajutara-nest --lib --release -- --ignored esicup
+RAJUTARA_ESICUP_DIR=target/esicup cargo test -p rajutara-nest --lib --release -- --ignored --test-threads=1 esicup
 ```
 
   Required at `Stop::Time(60 s)`, 4 threads: SHIRTS >= 84.0 %, TROUSERS >= 87.0 %, SWIM >= 67.0 %, ALBANO >= 84.0 %, SHIRTS x 3 (297 pieces) >= 83.0 % with no overlaps; plus an 8-seed sweep at `Stop::Iterations(400)` in 83-87 % with zero repairs (`crates/rajutara-nest/src/engine/esicup_tests.rs`).
-- i686 memory: `scripts/nest-memory-i686.sh` runs the SHIRTS x 3 benchmark (297 pieces) under Wine inside `docker/win7-cross.Dockerfile`; peak RSS must stay under 1 GB.
+  CI runs the same gates nightly (`.github/workflows/nest-nightly.yml`). The i686 memory budget (1 GB peak for SHIRTS x 3) is checked with the Windows builds, outside this repository.
 - Always run `cargo test -p rajutara-nest` (debug is fine for everything except the gates above) and `cargo clippy -p rajutara-nest --all-targets -- -D warnings`.
 
 ## Changing the engine
@@ -92,6 +92,21 @@ RAJUTARA_ESICUP_DIR=target/esicup cargo test -p rajutara-nest --lib --release --
 3. A packing the search returns must be overlap-free by construction; `verify_and_repair` is the safety net, and the sweep asserts it is never needed. Do not widen `OVERLAP_AREA_TOL_MM2` to hide a defect.
 4. Re-run the ESICUP gates in release before and after; report the efficiencies and wall times, not just pass/fail.
 5. Update `docs/spec/04-marker.md` §6 and `CHANGELOG.md`.
+
+## Marker features the engine must respect (1.4.0 and 1.5.0)
+
+`crates/rajutara-nest/src/marker/glue.rs` turns a Marker into engine items and fixed obstacles:
+
+- **Fix on Marker** (`MarkerPiece::pinned`, commands `set_pinned`): a pinned placed instance is a fixed obstacle even with `keep_placed: false`.
+- **Clusters and Fuse Blocks** (`Marker::clusters`, `marker::cluster::{make_cluster, delete_clusters, nesting_ring}`): a cluster is nested as one item (its `nesting_ring`, the Fuse Block border for a block) and is never split; it only translates. A block's border keeps other pieces out.
+- **Flaws** (`Marker::flaws`, `marker::flaws::obstacles`, commands `add_flaw`, `import_flaws`, `remove_pieces_hitting_flaws`): every flaw is a fixed obstacle, so neither Auto Nesting nor Place All puts a piece on it.
+- **Insert to Hole** (`marker::hole::insert_to_hole`, then `insert_command`): the nearest free spot that fits a dragged placed piece, any allowed orientation, then a Shoot along the drag. Refused for a cluster member or when nothing fits within reach.
+- **Cutting Order** (`Marker::cut_order`, `marker::cutting::{sequence, optimize, set_cut_order}`): `optimize` orders the cuts nearest-neighbour from the table corner (`OptimizeOptions { from_top, choose_starts }`). `rajutara_nest::output::cutfile::cut_job` follows the order, each start vertex (default lowest-left) and direction (default clockwise), and cuts a Fuse Block as its border alone.
+- **Bump Lines** (`Marker::bump_lines`, `marker::bump::{walls, obstacles, end_nesting, cut_segments}`, commands `set_bump_lines`, `add_bump_line`, `move_bump_line`): every line that is not No Bump is a wall Auto Nesting, the Place commands and Shoot stop at. `CutLineSettings::auto_vertical` adds a vertical line at the used length after each Auto Nesting (`end_nesting`). The cut file cuts the Cut lines minus what lies inside pieces (`cut_segments`).
+- Flaws and bump lines block placement but never add to the used length or the Efficiency.
+- **Ply modes**: Tubular, Faced and Folded can be chosen in the Marker since 1.5.0. Faced and Folded instance a pair piece once (the opposite ply gives its mirror); half pieces are still nested unfolded.
+- **Single Piece Gap** (Preferences › Marker Shoot gap): Shoot stops that much further from pieces, margins and bump lines. **Substitute Size** (`commands::substitutions`, `substitute_size`) swaps placed pieces with waiting copies of the next size. Marker texts (`commands::add_text`, `marker::texts`) are plotted, never cut, and do not affect nesting.
+- **Auto Nest Queue** (Nesting › Auto Nest Queue…, `crates/rajutara-nest/src/ui/queue.rs`): several `.rjm` files nested one after another on one background job, each written to `<stem>-nested.rjm`; the input is never written. UI only, no headless entry.
 
 ## Cut Plan integration
 

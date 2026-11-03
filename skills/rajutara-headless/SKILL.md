@@ -10,19 +10,19 @@ Two headless surfaces exist: the real binary with `--smoke` (needs a virtual dis
 ## The binary
 
 ```text
-rajutara [--lang en|id] [FILE...]    open the shell, then FILEs (.optx .optm .optc .dxf)
+rajutara [--lang en|id] [FILE...]    open the shell, then FILEs (.rjx .rjm .rjc .dxf; legacy .optx .optm .optc)
 rajutara --version                   "rajutara <version> (<git hash>, <target>)", exit 0
 rajutara --smoke [FILE]              open the real window, render 60 frames, print one JSON line, exit 0
 ```
 
-Parsing is in `crates/rajutara/src/args.rs`. Exit codes: 0 success; 1 for usage errors (unknown flag, `--lang` other than `en`/`id`, a `--smoke FILE` that cannot be opened, with no JSON on stdout); 2 for a window or OpenGL failure (message on stderr). The CLI contract is tested in `crates/rajutara/tests/cli.rs`.
+Parsing is in `crates/rajutara/src/args.rs`. Exit codes: 0 success; 1 for usage errors (unknown flag, `--lang` other than `en`/`id`, a `--smoke FILE` that cannot be opened, with no JSON on stdout); 2 for a window or OpenGL failure (message on stderr). The CLI contract is tested in `crates/rajutara/tests/all/cli.rs`.
 
 ### `--smoke`
 
 ```sh
 cargo build --release -p rajutara
 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x800x24" target/release/rajutara --smoke
-LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x800x24" target/release/rajutara --smoke fixtures/style-100.optx
+LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x800x24" target/release/rajutara --smoke fixtures/style-100.rjx
 ```
 
 One line of JSON, for example:
@@ -41,7 +41,7 @@ BUDGET_FIXTURES=on scripts/check-budgets.sh linux target/release/rajutara   # al
 scripts/test-scripts.sh                                     # self-test of the budget scripts
 ```
 
-Limits: idle RSS <= 150 MB, 100-piece Style <= 400 MB, 1000-piece Marker <= 8 ms CPU per frame; cold start over 1.5 s only warns. The same line decides a Windows 7 build under Wine (`scripts/build-win7.sh --test rajutara`, Docker image `docker/win7-cross.Dockerfile`).
+Limits: idle RSS <= 150 MB, 100-piece Style <= 400 MB, 1000-piece Marker <= 8 ms CPU per frame; cold start over 1.5 s only warns. The same line decides a Windows 7 build under Wine; the Windows cross-build tooling lives outside this repository.
 
 Needed packages on Ubuntu 24.04: `xvfb mesa-utils libgl1 libgl1-mesa-dri libegl1 libxkbcommon-x11-0 libxcursor1 libxi6 libxrandr2` (see the README build section). CI runs it with `LIBGL_ALWAYS_SOFTWARE=1` so Mesa llvmpipe renders without a GPU.
 
@@ -51,26 +51,28 @@ Needed packages on Ubuntu 24.04: `xvfb mesa-utils libgl1 libgl1-mesa-dri libegl1
 cargo run --release -p rajutara --example tshirt_sample -- out/
 ```
 
-No window opens. In `crates/rajutara/examples/tshirt_sample.rs` it: drafts a four-piece T-shirt Style for Base Size M, grades it to S, M, L, XL, validates (`validate_style`, refusing on errors) and checks the grading; saves `.optx`; embeds it in a Marker (one Bundle per size on 1800 mm Single Jersey, buffer 5 mm); auto-nests with `Stop::Time(15 s)` and `seed: 1`; checks 0 overlaps; then writes everything and reloads it to prove equality. Outputs, identical to `samples/kaos-lengan-pendek/`:
+No window opens. In `crates/rajutara/examples/tshirt_sample.rs` it: drafts a four-piece T-shirt Style for Base Size M, grades it to S, M, L, XL, validates (`validate_style`, refusing on errors) and checks the grading; saves `.rjx`; embeds it in a Marker (one Bundle per size on 1800 mm Single Jersey, buffer 5 mm); auto-nests with `Stop::Time(15 s)` and `seed: 1`; checks 0 overlaps; then writes everything and reloads it to prove equality. Outputs, identical to `samples/kaos-lengan-pendek/`:
 
 | File | Writer |
 |---|---|
-| `kaos-lengan-pendek.optx` | `rajutara_io::save_style` |
-| `kaos-lengan-pendek-marker.optm` | `save_marker` |
+| `kaos-lengan-pendek.rjx` | `rajutara_io::save_style` |
+| `kaos-lengan-pendek-marker.rjm` | `save_marker` |
 | `kaos-lengan-pendek.dxf` + `.rul` | `rajutara_grading::export::run_export` with `GradingExport::RuleFile` |
 | `kaos-lengan-pendek-marker.pdf` (A0), `-marker.plt` (HPGL/2) | `rajutara_nest::output::plot::plot_marker` |
-| `kaos-lengan-pendek-marker-report.csv` | `rajutara_nest::report::write_csv_report` |
+| `kaos-lengan-pendek-marker-report.xlsx` | `rajutara_nest::report::write_xlsx_report` |
 | `kaos-lengan-pendek-pieces-M.pdf` (A4 tiles) | `rajutara_pds::plot::job::plot_job` + `rajutara_io::plot_pdf` |
 
 It prints `draft: ...`, `marker: ... efficiency ... length ... conflicts` and `reload: ...` lines and returns an error (non-zero exit) when validation, fit or round trip fails. Copy it as the template for your own pipeline: replace `tee_style()` with `rajutara_io::import_dxf(..)` (see `rajutara-io`), keep the validate, nest, verify, write, reload shape.
 
+A smaller example, `crates/rajutara/examples/line_25cm.rs` (`cargo run --release -p rajutara --example line_25cm -- out/garis-25cm.rjx`), saves one Style: a 30 x 10 cm sheet with a 25 cm horizontal Internal Line, as in `samples/garis-25cm/garis-25cm.rjx`.
+
 ## End-to-end test
 
-`crates/rajutara/tests/e2e_workflow.rs` runs the operator workflow headless through the same public API the workspaces call: DXF + RUL import, notch edit through `History`, grading, ASTM export and re-import, a three-size Marker, auto-nesting, HPGL/2 and PDF plots, a Cut Plan solved and reported to CSV and PDF. Artifacts land in `target/e2e/artifacts`.
+`crates/rajutara/tests/all/e2e_workflow.rs` runs the operator workflow headless through the same public API the workspaces call: DXF + RUL import, notch edit through `History`, grading, ASTM export and re-import, a three-size Marker, auto-nesting, HPGL/2 and PDF plots, a Cut Plan solved and reported to CSV and PDF. Artifacts land in `target/e2e/artifacts`.
 
 ```sh
-cargo test -p rajutara --test e2e_workflow -- --nocapture          # prints "E2E ..." lines; budgets printed, not asserted
-cargo test -p rajutara --release --test e2e_workflow -- --include-ignored   # budgets asserted, includes the 300-piece nest
+cargo test -p rajutara --test all e2e_workflow -- --nocapture          # prints "E2E ..." lines; budgets printed, not asserted
+cargo test -p rajutara --release --test all e2e_workflow -- --include-ignored   # budgets asserted, includes the 300-piece nest
 ```
 
 ## Scripting the library
@@ -84,19 +86,19 @@ for i in &issues { eprintln!("{:?} {}: {}", i.severity, i.location, i.message); 
 let errors = rajutara_core::validate_style(&style).into_iter()
     .filter(|i| i.severity == rajutara_core::Severity::Error).count();
 if errors > 0 { return Err(format!("{errors} validation error(s)").into()); }
-save_style(&style, Path::new("out/shirt.optx"))?;
+save_style(&style, Path::new("out/shirt.rjx"))?;
 ```
 
 Rules: always surface every `ImportIssue`; validate before saving; never use `unwrap` on user data; pass `created: utc_now_stamp()` only for real exports (tests keep the epoch default so output is byte-stable); for determinism use `Stop::Iterations(n)` and a fixed `seed` (see `rajutara-nesting`).
 
 ## Without Rust: read the documents
 
-`.optx`, `.optm`, `.optc` are zip files with `manifest.json` and `document.json` (format 2). A script can inspect them:
+`.rjx`, `.rjm`, `.rjc` are zip files with `manifest.json` and `document.json` (format 2). A script can inspect them:
 
 ```sh
-unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek.optx manifest.json
-unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek.optx document.json | jq '.pieces | length'
-unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek-marker.optm document.json | jq '[.pieces[] | select(.pose == null)] | length'   # instances still in the Piece Bar
+unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek.rjx manifest.json
+unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek.rjx document.json | jq '.pieces | length'
+unzip -p samples/kaos-lengan-pendek/kaos-lengan-pendek-marker.rjm document.json | jq '[.pieces[] | select(.pose == null)] | length'   # instances still in the Piece Bar
 ```
 
 Reading is safe; **writing** documents by hand skips validation, id allocation and the read-back check of `save_*`. Write through the crates, then reload to verify. Same input and settings give byte-identical files; export headers carry a UTC timestamp, so only that line differs between two exports.
