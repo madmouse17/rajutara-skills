@@ -9,7 +9,7 @@
 <p align="center">
   <img alt="Licence: MIT or Apache-2.0" src="https://img.shields.io/badge/licence-MIT%20OR%20Apache--2.0-d85820">
   <img alt="7 skills" src="https://img.shields.io/badge/skills-7-111c2e">
-  <img alt="For rajutara 1.5.0" src="https://img.shields.io/badge/rajutara-1.5.0-d85820">
+  <img alt="For rajutara 1.5.1" src="https://img.shields.io/badge/rajutara-1.5.1-d85820">
 </p>
 
 Seven skills that teach a coding agent (Claude Code, Codex, Cursor, omp and any other agent that reads `SKILL.md` files) how to build, extend, script and operate rajutara, and what it must never do. Each skill is one `skills/<name>/SKILL.md` with `name` and `description` frontmatter, at most 300 lines, written from the rajutara sources: every path and command it cites exists in the rajutara checkout (`scripts/verify.sh` checks that).
@@ -51,7 +51,7 @@ The skills describe the rajutara repository, so open the agent in a checkout of 
 | [`rajutara-operator`](skills/rajutara-operator/SKILL.md) | An assistant helps a workshop Operator: PDS, Grading, Marker and Cut Plan workflows under their Optitex names and keys, importing a graded ASTM file, making a marker, clusters and cutting order, planning a cut order. | `GLOSSARY.md`, `docs/spec/02-pds.md` to `05-cutplan.md` |
 | [`rajutara-clean-room`](skills/rajutara-clean-room/SKILL.md) | Before you add a feature, format, asset, fixture or dependency: ADR 0001 (no Optitex files), ADR 0002 (MIT OR Apache-2.0, no GPL), ADR 0013 (RUL is open). | `docs/adr/0001`, `0002`, `0013` |
 
-[`skills/index.json`](skills/index.json) lists them for tools that prefer a manifest. Its `version` follows the rajutara release the skills were checked against (now 1.5.0); what changed is in [`CHANGELOG.md`](CHANGELOG.md).
+[`skills/index.json`](skills/index.json) lists them for tools that prefer a manifest. Its `version` follows the rajutara release the skills were checked against (now 1.5.1); what changed is in [`CHANGELOG.md`](CHANGELOG.md).
 
 Start a developer session with `rajutara-clean-room` and `rajutara-dev`; they point to the others. Give an Operator-facing assistant only `rajutara-operator`.
 

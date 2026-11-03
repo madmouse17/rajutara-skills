@@ -1,9 +1,9 @@
 {
   "name": "rajutara-skills",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "repository": "https://github.com/rajutara/rajutara-skills",
   "license": "MIT OR Apache-2.0",
-  "targets": { "rajutara": "1.5.0" },
+  "targets": { "rajutara": "1.5.1" },
   "skills": [
     {
       "name": "rajutara-dev",

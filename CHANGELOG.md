@@ -2,6 +2,13 @@
 
 All notable changes to rajutara-skills. Format: [Keep a Changelog](https://keepachangelog.com/). The version follows the rajutara release the skills were checked against (`skills/index.json`: `version` and `targets.rajutara`).
 
+## [1.5.1] - 2026-11-04
+
+Tracks rajutara 1.5.1: bug fixes, no API change. Checked with `scripts/verify.sh`.
+
+### Changed
+- `rajutara-operator`: Stack Along Line is enabled by clicking near an outline in the Grading Work Area (that selects the contour segment); Auto Nest Queue rows start as Regular.
+
 ## [1.5.0] - 2026-11-04
 
 Checked against rajutara 1.5.0 with `scripts/verify.sh`.
